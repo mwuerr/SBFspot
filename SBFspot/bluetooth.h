@@ -1,6 +1,6 @@
 /************************************************************************************************
 	SBFspot - Yet another tool to read power production of SMA solar inverters
-	(c)2012-2018, SBF
+	(c)2012-2021, SBF
 
 	Latest version found at https://github.com/SBFspot/SBFspot
 
@@ -32,12 +32,11 @@ DISCLAIMER:
 
 ************************************************************************************************/
 
-#ifndef _BLUETOOTH_H_
-#define _BLUETOOTH_H_
+#pragma once
 
 #include "osselect.h"
 
-#ifdef WIN32
+#if defined(_WIN32)
 
 // Ignore warning C4127: conditional expression is constant
 #pragma warning(disable: 4127)
@@ -60,9 +59,9 @@ http://www.curlybrace.com/words/2011/01/17/bluetoothapis-h-broken-in-windows-sdk
 
 typedef ULONGLONG BT_ADDR, *PBT_ADDR;
 
-#endif	/* WIN32 */
+#endif	/* _WIN32 */
 
-#ifdef linux
+#if defined(__linux__)
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
@@ -77,14 +76,11 @@ typedef ULONGLONG BT_ADDR, *PBT_ADDR;
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#endif	/* linux */
+#endif	/* __linux__ */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <iostream>
-
-unsigned char char2dec(char ch);
-unsigned char hexbyte2dec(char *hex);
 
 #define BT_NUMRETRY 10
 #define BT_TIMEOUT  10
@@ -96,7 +92,7 @@ extern int debug;
 extern int verbose;
 
 //Function prototypes
-int bthConnect(const char *btAddr);
+int bthConnect(const char *btAddr, const char *loc_btAddr = NULL);
 int bthClose();
 int bthRead(unsigned char *buf, unsigned int bufsize);
 int bthSend(unsigned char *btbuffer);
@@ -104,9 +100,7 @@ int setBlockingMode();
 int setNonBlockingMode();
 void bthClear();
 
-#ifdef WIN32
+#if defined(_WIN32)
 int str2ba(const char *straddr, BTH_ADDR *btaddr);
 int bthSearchDevices();
-#endif	/* WIN32 */
-
-#endif /* _BLUETOOTH_H_ */
+#endif	/* _WIN32 */

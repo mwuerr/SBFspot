@@ -38,6 +38,8 @@ DISCLAIMER:
 #include <vector>
 #include <boost/date_time/local_time/local_time.hpp>
 
+class EventData;
+
 typedef enum
 {
     CT_NONE = 0,
@@ -58,8 +60,9 @@ struct Config
 {
     std::string	ConfigFile;			//Fullpath to configuration file
     std::string	AppPath;
-    char	BT_Address[18];			//Inverter bluetooth address 12:34:56:78:9A:BC
-    char	IP_Address[16];			//Inverter IP address 192.168.178.123 (for Speedwirecommunication)
+	char	BT_Address[18];			//Inverter bluetooth address 12:34:56:78:9A:BC
+	char	Local_BT_Address[18];	//Local bluetooth address 12:34:56:78:9A:BC
+	char	IP_Address[16];			//Inverter IP address 192.168.178.123 (for Speedwirecommunication)
     std::vector<std::string> ip_addresslist; //List of Inverter IP addresses (for Speedwirecommunication )
     int		BT_Timeout;
     int		BT_ConnectRetries;
@@ -104,6 +107,7 @@ struct Config
     boost::local_time::time_zone_ptr tz;
     int		synchTimeLow;			// settime low limit
     int		synchTimeHigh;			// settime high limit
+
     // MQTT Stuff -- Using mosquitto (https://mosquitto.org/)
     std::string mqtt_publish_exe;	// default /usr/bin/mosquitto_pub ("%ProgramFiles%\mosquitto\mosquitto_pub.exe" on Windows)
     std::string mqtt_host;			// default localhost

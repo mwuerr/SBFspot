@@ -47,9 +47,6 @@ DISCLAIMER:
 
 ************************************************************************************************/
 
-// Fix undefined reference to 'boost::system::system_category()' introduced with PR #361
-#define BOOST_ERROR_CODE_HEADER_ONLY
-
 #include "version.h"
 #include "osselect.h"
 #include "endianness.h"
@@ -1421,7 +1418,7 @@ int parseCmdline(int argc, char **argv, Config *cfg)
         //Scan for bluetooth devices
         else if (stricmp(argv[i], "-scan") == 0)
         {
-#ifdef WIN32
+#if defined(_WIN32)
             bthSearchDevices();
 #else
             puts("On LINUX systems, use hcitool scan");
@@ -1554,8 +1551,9 @@ int GetConfig(Config *cfg)
 {
     //Initialise config structure and set default values
     strncpy(cfg->prgVersion, VERSION, sizeof(cfg->prgVersion));
-    memset(cfg->BT_Address, 0, sizeof(cfg->BT_Address));
-    memset(cfg->IP_Address, 0, sizeof(cfg->IP_Address));
+	memset(cfg->BT_Address, 0, sizeof(cfg->BT_Address));
+	memset(cfg->Local_BT_Address, 0, sizeof(cfg->Local_BT_Address));
+	memset(cfg->IP_Address, 0, sizeof(cfg->IP_Address));
     cfg->outputPath[0] = 0;
 	cfg->outputPath_Events[0] = 0;
     if (cfg->userGroup == UG_USER) cfg->SMA_Password[0] = 0;
@@ -1589,7 +1587,7 @@ int GetConfig(Config *cfg)
 	// MQTT default values
 	cfg->mqtt_host = "localhost";
 	cfg->mqtt_port = ""; // mosquitto: 1883/8883 for TLS
-#if defined(WIN32)
+#if defined(_WIN32)
 	cfg->mqtt_publish_exe = "%ProgramFiles%\\mosquitto\\mosquitto_pub.exe";
 #else
 	cfg->mqtt_publish_exe = "/usr/bin/mosquitto_pub";
@@ -1635,10 +1633,13 @@ int GetConfig(Config *cfg)
             {
 				if (stricmp(variable, "BTaddress") == 0)
 				{
-					memset(cfg->BT_Address, 0, sizeof(cfg->BT_Address));
 					strncpy(cfg->BT_Address, value, sizeof(cfg->BT_Address) - 1);
 				}
-                else if(strnicmp(variable, "IP_Address", 10) == 0)
+				else if (stricmp(variable, "LocalBTaddress") == 0)
+				{
+					strncpy(cfg->Local_BT_Address, value, sizeof(cfg->Local_BT_Address) - 1);
+				}
+				else if(strnicmp(variable, "IP_Address", 10) == 0)
 				{
 					boost::split(cfg->ip_addresslist, value, boost::is_any_of(","));
 					for (unsigned int i = 0; i < cfg->ip_addresslist.size(); i++)
@@ -2053,6 +2054,8 @@ void ShowConfig(Config *cfg)
     std::cout << "Configuration settings:";
 	if (strlen(cfg->IP_Address) == 0)	// No IP address -> Show BT address
 		std::cout << "\nBTAddress=" << cfg->BT_Address;
+	if (strlen(cfg->Local_BT_Address) > 0)	// Show Local BT address
+		std::cout << "\nLocalBTAddress=" << cfg->Local_BT_Address;
 	if (strlen(cfg->BT_Address) == 0)	// No BT address -> Show IP address
 		std::cout << "\nIP_Address=" << cfg->IP_Address;
 	std::cout << "\nPassword=<undisclosed>" << \

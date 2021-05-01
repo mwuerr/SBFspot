@@ -39,6 +39,7 @@ DISCLAIMER:
 #include <errno.h>
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 #define COMMBUFSIZE 2048 // Size of Communications Buffer (Bluetooth/Ethernet)
 
@@ -53,6 +54,8 @@ char *rtrim(char *txt);
 int get_tzOffset(/*OUT*/int *isDST);
 int CreatePath(const char *dir);
 void HexDump(unsigned char *buf, int count, int radix);
+char *FormatFloat(char *str, float value, int width, int precision, char decimalpoint);
+char *FormatDouble(char *str, double value, int width, int precision, char decimalpoint);
 std::string realpath(const char *path);
 
 #define DEBUG_LOW (debug >= 1)

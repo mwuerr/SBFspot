@@ -56,29 +56,13 @@ const char *delim2txt(const char delim)
 //Linebreak To Text
 const char *linebreak2txt(void)
 {
-#if defined (WIN32)
+#if defined(_WIN32)
 	return "CR/LF";
 #endif
 
-#if defined (linux)
+#if defined (__linux__)
 	return "LF";
 #endif
-}
-
-char *FormatFloat(char *str, float value, int width, int precision, char decimalpoint)
-{
-	sprintf(str, "%*.*f", width, precision, value);
-	char *dppos = strrchr(str, '.');
-	if (dppos != NULL) *dppos = decimalpoint;
-	return str;
-}
-
-char *FormatDouble(char *str, double value, int width, int precision, char decimalpoint)
-{
-	sprintf(str, "%*.*f", width, precision, value);
-	char *dppos = strrchr(str, '.');
-	if (dppos != NULL) *dppos = decimalpoint;
-	return str;
 }
 
 // Convert format string like %d/%m/%Y %H:%M:%S to dd/mm/yyyy HH:mm:ss
@@ -479,7 +463,7 @@ int ExportSpotDataToCSV(const Config *cfg, InverterData* const inverters[])
 	else
 	{
 		//Write header when new file has been created
-		#ifdef WIN32
+		#if defined(_WIN32)
 		if (filelength(fileno(csv)) == 0)
 		#else
 		struct stat fStat;
@@ -574,7 +558,7 @@ int ExportEventsToCSV(const Config *cfg, InverterData* const inverters[], std::s
 	else
 	{
 		//Write header when new file has been created
-		#ifdef WIN32
+		#if defined(_WIN32)
 		if (filelength(fileno(csv)) == 0)
 		#else
 		struct stat fStat;
@@ -692,7 +676,7 @@ int ExportBatteryDataToCSV(const Config *cfg, InverterData* const inverters[])
 	else
 	{
 		//Write header when new file has been created
-		#ifdef WIN32
+		#if defined(_WIN32)
 		if (filelength(fileno(csv)) == 0)
 		#else
 		struct stat fStat;
@@ -725,12 +709,12 @@ int ExportBatteryDataToCSV(const Config *cfg, InverterData* const inverters[])
 			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Pac1), 0, cfg->precision, cfg->decimalpoint));
 			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Pac2), 0, cfg->precision, cfg->decimalpoint));
 			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Pac3), 0, cfg->precision, cfg->decimalpoint));
-			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Uac1)/100, 0, cfg->precision, cfg->decimalpoint));
+            fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Iac1) / 1000, 0, cfg->precision, cfg->decimalpoint));
+            fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Iac2) / 1000, 0, cfg->precision, cfg->decimalpoint));
+            fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Iac3) / 1000, 0, cfg->precision, cfg->decimalpoint));
+            fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Uac1)/100, 0, cfg->precision, cfg->decimalpoint));
 			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Uac2)/100, 0, cfg->precision, cfg->decimalpoint));
 			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Uac3)/100, 0, cfg->precision, cfg->decimalpoint));
-			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Iac1)/1000, 0, cfg->precision, cfg->decimalpoint));
-			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Iac2)/1000, 0, cfg->precision, cfg->decimalpoint));
-			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->Iac3)/1000, 0, cfg->precision, cfg->decimalpoint));
 			fprintf(csv, strout, cfg->delimiter, FormatFloat(FormattedFloat, ((float)inverters[inv]->TotalPac), 0, cfg->precision, cfg->decimalpoint));
 			fprintf(csv, strout, cfg->delimiter, FormatDouble(FormattedFloat, ((double)inverters[inv]->EToday)/1000, 0, cfg->precision, cfg->decimalpoint));
 			fprintf(csv, strout, cfg->delimiter, FormatDouble(FormattedFloat, ((double)inverters[inv]->ETotal)/1000, 0, cfg->precision, cfg->decimalpoint));

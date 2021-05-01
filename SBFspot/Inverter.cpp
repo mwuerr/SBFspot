@@ -296,8 +296,44 @@ int Inverter::process()
         }
     }
 
-    if ((rc = getInverterData(m_inverters, EnergyProduction)) != 0)
-        std::cerr << "getEnergyProduction returned an error: " << rc << std::endl;
+	if ((rc = getInverterData(m_inverters, EnergyProduction)) != 0)
+	{
+		std::cerr << "getEnergyProduction returned an error: " << rc << std::endl;
+	}
+
+	// Issue #290 Etoday and temperature are shown as ZERO from STP6.0 inverter
+	// Flag to indicate whether archdata has been loaded (for all inverters)
+	bool archdata_available = false;
+
+	for (uint32_t inv = 0; m_inverters[inv] != NULL && inv < MAX_INVERTERS; inv++)
+	{
+		/* reset day yield counter to test the issue */
+		// m_inverters[inv]->EToday = 0;
+
+		if (m_inverters[inv]->EToday == 0)
+		{
+			if (!archdata_available)
+			{
+				time_t arch_time = time(NULL);
+
+				if ((rc = ArchiveDayData(m_inverters, arch_time)) == E_OK)
+					archdata_available = true;
+				else if (rc != E_ARCHNODATA)
+					std::cerr << "ArchiveDayData returned an error: " << rc << std::endl;
+			}
+
+			if (archdata_available)
+			{
+				// EToday = Current ETotal - StartOfDay ETotal
+				m_inverters[inv]->EToday = m_inverters[inv]->ETotal - m_inverters[inv]->dayData[0].totalWh;
+				if (VERBOSE_NORMAL)
+				{
+					printf("SUSyID: %d - SN: %lu\n", m_inverters[inv]->SUSyID, m_inverters[inv]->Serial);
+					printf("Calculated EToday: %.3fkWh\n", tokWh(m_inverters[inv]->EToday));
+				}
+			}
+		}
+	}
 
     if ((rc = getInverterData(m_inverters, OperationTime)) != 0)
         std::cerr << "getOperationTime returned an error: " << rc << std::endl;
@@ -412,15 +448,17 @@ int Inverter::process()
 #elif defined(USE_SQLITE)
         m_db.open(m_config.sqlDatabase);
 #endif
+/* Fix #448
         if (m_db.isopen())
         {
             time_t spottime = time(NULL);
             m_db.type_label(m_inverters);
             m_db.device_status(m_inverters, spottime);
-            m_db.spot_data(m_inverters, spottime);
+            m_db.exportSpotData(m_inverters, spottime);
             if (hasBatteryDevice)
-                m_db.battery_data(m_inverters, spottime);
+                m_db.exportBatteryData(m_inverters, spottime);
         }
+*/
     }
 #endif
 
@@ -583,7 +621,7 @@ int Inverter::logOn()
             if (attempts != 1) sleep(1);
             {
                 if (VERBOSE_NORMAL) printf("Connecting to %s (%d/%d)\n", m_config.BT_Address, attempts, m_config.BT_ConnectRetries);
-                rc = bthConnect(m_config.BT_Address);
+                rc = bthConnect(m_config.BT_Address, m_config.Local_BT_Address);
             }
             attempts++;
         }
@@ -682,9 +720,9 @@ void Inverter::exportSpotData()
         time_t spottime = time(NULL);
         m_db.type_label(m_inverters);
         m_db.device_status(m_inverters, spottime);
-        m_db.spot_data(m_inverters, spottime);
+        m_db.exportSpotData(m_inverters, spottime);
         if (hasBatteryDevice)
-            m_db.battery_data(m_inverters, spottime);
+            m_db.exportBatteryData(m_inverters, spottime);
     }
 #endif
 
@@ -693,7 +731,8 @@ void Inverter::exportSpotData()
     ********/
     if (m_config.mqtt == 1) // MQTT enabled
     {
-        auto rc = mqtt_publish(&m_config, m_inverters);
+        MqttExport mqtt(m_config);
+        auto rc = mqtt.exportInverterData(toStdVector(m_inverters));
         if (rc != 0)
         {
             std::cout << "Error " << rc << " while publishing to MQTT Broker" << std::endl;
@@ -708,7 +747,7 @@ void Inverter::exportDayData()
 
 #if defined(USE_SQLITE) || defined(USE_MYSQL)
     if ((!m_config.nosql) && m_db.isopen())
-        m_db.day_data(m_inverters);
+        m_db.exportDayData(m_inverters);
 #endif
 }
 
@@ -719,7 +758,7 @@ void Inverter::exportMonthData()
 
 #if defined(USE_SQLITE) || defined(USE_MYSQL)
     if ((!m_config.nosql) && m_db.isopen())
-        m_db.month_data(m_inverters);
+        m_db.exportMonthData(m_inverters);
 #endif
 }
 
@@ -730,6 +769,18 @@ void Inverter::exportEventData(const std::string& dt_range_csv)
 
 #if defined(USE_SQLITE) || defined(USE_MYSQL)
     if ((!m_config.nosql) && m_db.isopen())
-        m_db.event_data(m_inverters, tagdefs);
+        m_db.exportEventData(m_inverters, tagdefs);
 #endif
 }
+
+std::vector<InverterData> Inverter::toStdVector(InverterData* const* const inverters)
+{
+	std::vector<InverterData> inverterData;
+	inverterData.reserve(MAX_INVERTERS);
+
+	for (uint32_t inv = 0; inverters[inv] != NULL && inv < MAX_INVERTERS; inv++)
+		inverterData.push_back(*inverters[inv]);
+
+	return inverterData;
+}
+
