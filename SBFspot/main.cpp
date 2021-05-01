@@ -509,7 +509,7 @@ int main(int argc, char **argv)
             std::cerr << "getMeteringGridMsTotW returned an error: " << rc << std::endl;
         else
         {
-            for (int inv=0; Inverters[inv]!=NULL && inv<MAX_INVERTERS; inv++)
+            for (uint32_t inv=0; Inverters[inv]!=NULL && inv<MAX_INVERTERS; inv++)
             {
                 if (VERBOSE_NORMAL)
                 {
